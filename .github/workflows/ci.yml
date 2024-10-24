@@ -1,0 +1,427 @@
+# name of the workflow, what it is doing (optional)
+name: BoxMOT CI
+
+# events that trigger the workflow (required)
+on:
+  push:
+    # pushes to the following branches
+    branches:
+      - master
+  pull_request:
+    # pull request where master is target
+    branches:
+      - master
+
+
+jobs:
+  tracking-methods:
+    runs-on: ${{ matrix.os }}
+    outputs:
+      status: ${{ job.status }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]   # skip windows-latest for
+        python-version: ['3.11']
+        # leads to too many workflow which ends up queued
+        # tracking-method: [hybridsort, botsort, ocsort, bytetrack] 
+
+    # Timeout: https://stackoverflow.com/a/59076067/4521646
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4  # Check out the repository
+      - name: Set up Python
+        uses: actions/setup-python@v5  # Prepare environment with python 3.9
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip' # caching pip dependencies
+      - name: Install requirements
+        shell: bash  # for Windows compatibility
+        run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            sed -i 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          fi
+          python -m pip install --upgrade pip setuptools wheel poetry
+          poetry config virtualenvs.create false
+          poetry lock --no-update
+          poetry install --with yolo
+
+      - name: Generate detections and embeddings
+        run: |
+          python tracking/val.py generate_dets_embs --source ./assets/MOT17-mini/train --yolo-model yolov8n.pt --reid-model osnet_x0_25_msmt17.pt --imgsz 320
+
+      - name: Run tracking method
+        run: |
+          for tracker in $TRACKERS; do
+            python tracking/val.py generate_mot_results  --yolo-model yolov8n.pt --reid-model osnet_x0_25_msmt17.pt --imgsz 320 --tracking-method $tracker
+          done
+
+  evolution:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]   # skip windows-latest for
+        python-version: ['3.8', '3.11']
+    outputs:
+      status: ${{ job.status }}
+
+    # Timeout: https://stackoverflow.com/a/59076067/4521646
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4  # Check out the repository
+      - name: Set up Python
+        uses: actions/setup-python@v5  # Prepare environment with python 3.9
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip' # caching pip dependencies
+
+      - name: Install requirements
+        shell: bash  # for Windows compatibility
+        run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            sed -i 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          fi
+          python -m pip install --upgrade pip setuptools wheel poetry
+          poetry config virtualenvs.create false
+          poetry lock --no-update
+          poetry install --with yolo,evolve
+
+      - name: Evolve set of parameters for selected tracking method
+        run: |
+          # reuse first set of generated det and prod
+          python tracking/evolve.py --benchmark MOT17-mini --yolo-model yolox_x.pt --reid-model osnet_x0_25_msmt17.pt --n-trials 3 --tracking-method strongsort --source ./assets/MOT17-mini/train --ci
+
+
+  mot-metrics-benchmark:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]   # skip windows-latest for
+        python-version: ['3.8', '3.11']
+    outputs:
+      status: ${{ job.status }}
+    env:
+      TRACKERS: "ocsort bytetrack botsort hybridsort deepocsort imprassoc"
+
+    # Timeout: https://stackoverflow.com/a/59076067/4521646
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4  # Check out the repository
+      - name: Set up Python
+        uses: actions/setup-python@v5  # Prepare environment with python 3.9
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip' # caching pip dependencies
+
+      - name: Install requirements
+        shell: bash  # for Windows compatibility
+        run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            sed -i 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          fi
+          sudo apt-get install -y jq
+          python -m pip install --upgrade pip setuptools wheel poetry
+          poetry config virtualenvs.create false
+          poetry lock --no-update
+          poetry install
+
+      - name: Generate detections and embeddings
+        run: |
+          python tracking/val.py generate_dets_embs --source ./assets/MOT17-mini/train  --yolo-model yolov8n.pt --reid-model osnet_x0_25_msmt17.pt --imgsz 320
+
+      - name: Evaluation and Summarize Results
+        shell: bash
+        run: |
+          echo "Format,Status❔,HOTA,MOTA,IDF1" > results.csv
+
+          for tracker in $TRACKERS; do
+            if python3 tracking/val.py --benchmark MOT17-mini --yolo-model yolov8n.pt --reid-model osnet_x0_25_msmt17.pt --tracking-method $tracker --verbose --source ./assets/MOT17-mini/train --ci; then
+              STATUS="✅"
+            else
+              STATUS="❌"
+            fi
+
+            cat ${tracker}_output.json
+
+            # Extract the relevant parts of the JSON
+            HOTA=$(jq -r '.HOTA' ${tracker}_output.json)
+            MOTA=$(jq -r '.MOTA' ${tracker}_output.json)
+            IDF1=$(jq -r '.IDF1' ${tracker}_output.json)
+
+            TRACKER_NAME=$(echo $tracker | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+            echo "$TRACKER_NAME,$STATUS,$HOTA,$MOTA,$IDF1" >> results.csv
+          done
+
+          # Create a pretty table from the results.csv file
+          column -s, -t results.csv > pretty_results.txt
+
+      - name: Show Results
+        shell: bash
+        run: |
+          cat pretty_results.txt
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: results-csv
+          path: pretty_results.txt
+
+
+  tracking-with-pose:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ job.status }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            sed -i 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          fi
+          python -m pip install --upgrade pip setuptools wheel poetry
+          poetry config virtualenvs.create false
+          poetry lock --no-update
+          poetry install --with yolo
+      - name: Test tracking with pose models
+        env:
+          IMG: ./assets/MOT17-mini/train/MOT17-02-FRCNN/img1/000001.jpg
+        run: python tracking/track.py --yolo-model weights/yolov8n-pose.pt --source $IMG --imgsz 320
+
+  tracking-with-yolos:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ job.status }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            sed -i 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          fi
+          python -m pip install --upgrade pip setuptools wheel poetry
+          poetry config virtualenvs.create false
+          poetry lock --no-update
+          poetry install --with yolo
+      - name: Test tracking with pose models
+        env:
+          IMG: ./assets/MOT17-mini/train/MOT17-02-FRCNN/img1/000001.jpg
+        run: |
+          python tracking/track.py --yolo-model yolov8n.pt --source $IMG --imgsz 320
+          python tracking/track.py --yolo-model yolox_n.pt --source $IMG --imgsz 320
+          # python tracking/track.py --yolo-model yolo_nas_s.pt --source $IMG --imgsz 320
+
+
+  tracking-with-seg:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ job.status }}
+    steps:
+      - id: set_result
+        run: echo "::set-output name=result::success"
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            sed -i 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          fi
+          python -m pip install --upgrade pip setuptools wheel poetry
+          poetry config virtualenvs.create false
+          poetry lock --no-update
+          poetry install --with yolo
+      - name: Test tracking with seg models
+        env:
+          IMG: ./assets/MOT17-mini/train/MOT17-02-FRCNN/img1/000001.jpg
+        run: python tracking/track.py --tracking-method deepocsort --yolo-model yolov8n-seg.pt --source $IMG
+
+  
+  export-reid-models:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ job.status }}
+    steps:
+      - id: set_result
+        run: echo "::set-output name=result::success"
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            sed -i 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          fi
+          python -m pip install --upgrade pip setuptools wheel poetry
+          poetry config virtualenvs.create false
+          poetry lock --no-update
+          poetry install --with export
+
+          # needed for TFLite export
+          sudo apt-get install flatbuffers-compiler
+          wget https://github.com/PINTO0309/onnx2tf/releases/download/1.16.31/flatc.tar.gz
+          tar -zxvf flatc.tar.gz
+          sudo chmod +x flatc
+          sudo mv flatc /usr/bin/
+
+      - name: Test export models
+        run: | 
+          python boxmot/appearance/reid_export.py --include torchscript onnx openvino tflite --device cpu --batch-size 3 --dynamic
+      - name: Check export TFLite models
+        run: |
+          ls /home/runner/work/boxmot/boxmot/tracking/weights/osnet_x0_25_msmt17_saved_model/
+      - name: Test inference on exported models
+        env:
+          IMG: ./assets/MOT17-mini/train/MOT17-02-FRCNN/img1/000001.jpg
+        run: |
+          python tracking/track.py --reid-model tracking/weights/osnet_x0_25_msmt17.torchscript    --source $IMG --imgsz 320
+          python tracking/track.py --reid-model tracking/weights/osnet_x0_25_msmt17.onnx           --source $IMG --imgsz 320
+          python tracking/track.py --reid-model tracking/weights/osnet_x0_25_msmt17_openvino_model --source $IMG --imgsz 320 
+          python tracking/track.py --reid-model tracking/weights/osnet_x0_25_msmt17_saved_model/osnet_x0_25_msmt17_float32.tflite --source $IMG --imgsz 320   
+               
+
+
+  tests:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ job.status }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            sed -i 's/source="torch_cuda121"/source="torchcpu"/g' pyproject.toml
+          fi
+          python -m pip install --upgrade pip setuptools wheel poetry
+          poetry config virtualenvs.create false
+          poetry lock --no-update
+          poetry install --with test
+      - name: Test export models
+        run: python boxmot/appearance/reid_export.py --include torchscript onnx openvino --device cpu --batch-size 3 --dynamic
+      - name: Pytest tests  # after tracking options as this does not download models
+        env:
+          # directory of PyPi package to be tested
+          PACKAGE_DIR: boxmot
+          # minimum acceptable test coverage
+          COVERAGE_FAIL_UNDER: 25
+        shell: bash  # for Windows compatibility
+        run: |
+          pytest --cov=$PACKAGE_DIR --cov-report=html -v tests
+          coverage report --fail-under=$COVERAGE_FAIL_UNDER
+
+
+  # test-gpu:
+  #   runs-on: gpu-latest
+  #   outputs:
+  #     status: ${{ job.status }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.11'
+  #     - run: |
+  #         python -m pip install --upgrade pip setuptools wheel poetry
+  #         poetry config virtualenvs.create false
+  #         poetry install --with test
+
+  #     - name: Pytest tests  # after tracking options as this does not download models
+  #       env:
+  #         # directory of PyPi package to be tested
+  #         PACKAGE_DIR: boxmot
+  #         # minimum acceptable test coverage
+  #         COVERAGE_FAIL_UNDER: 25
+  #       shell: bash  # for Windows compatibility
+  #       run: |
+  #         pytest --cov=$PACKAGE_DIR --cov-report=html -v tests/test_cuda.py
+
+
+  check-failures:
+    needs:
+      - tracking-methods
+      - mot-metrics-benchmark
+      - evolution
+      - export-reid-models
+      - tests
+      - tracking-with-pose
+      - tracking-with-seg
+      - tracking-with-yolos
+    if: always()  # This ensures the job runs regardless of previous job failures
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare environment variables
+        run: |
+          echo "tracking-methods_STATUS=${{ needs.tracking-methods.result }}" >> $GITHUB_ENV
+          echo "mot-metrics_STATUS=${{ needs.mot-metrics.result }}" >> $GITHUB_ENV
+          echo "evolution_STATUS=${{ needs.evolution.result }}" >> $GITHUB_ENV
+          echo "export-reid-models_STATUS=${{ needs.export-reid-modelsn.result }}" >> $GITHUB_ENV
+          echo "tests_STATUS=${{ needs.tests.result }}" >> $GITHUB_ENV
+          echo "tracking-with-pose_STATUS=${{ needs.tracking-with-pose.result }}" >> $GITHUB_ENV
+          echo "tracking-with-seg_STATUS=${{ needs.tracking-with-seg.result }}" >> $GITHUB_ENV
+          echo "tracking-with-yolos_STATUS=${{ needs.tracking-with-yolos.result }}" >> $GITHUB_ENV
+      - name: Check for failures and create summary
+        run: |
+          summary=""
+          failed=false
+
+          # Print all environment variables, grep for those ending with _STATUS, then loop
+          for var in $(printenv | grep '_STATUS$'); do
+            job_status="${var##*=}"  # Extract the status part
+            job_name="${var%%=*}"  # Extract the job name part
+            if [[ "$job_status" != "success" ]]; then
+              summary+="$job_name failed with status: $job_status\n"
+              failed=true
+            fi
+          done
+
+          if [[ "$failed" = false ]]; then
+            summary="All jobs succeeded."
+          fi
+
+          echo "Summary: $summary"

@@ -1,0 +1,33 @@
+docker run --gpus '"device=0"' --ipc=host -v /home/user/YU:/aa --rm -it -w /aa/fto-sort tidlsld44/boxmot:1.1 /bin/bash
+
+
+
+python track_txt.py --tracking-model BoTSORT
+
+FTOSORT				
+
+python track_txt_StrongSORT.py
+
+
+python tracking/track.py --yolo-model weights/YOLOv8n-seg_FBDA_OFBL.pt --source ../Data/Tracking/jochiwon/jochiwon-131/jochiwon-131/img1/ --save-txt
+
+
+ python tracking/track.py --tracking-method deepocsort
+                                             strongsort
+                                             ocsort
+                                             bytetrack
+                                             botsort
+                                             imprassoc
+
+
+python scripts/run_mot_challenge.py --BENCHMARK jochiwon --SPLIT_TO_EVAL 2M30S
+
+
+
+
+
+
+
+
+
+
