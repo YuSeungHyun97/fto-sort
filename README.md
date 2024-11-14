@@ -12,7 +12,7 @@ We provide an open dataset recorded over 2 minutes and 30 seconds in a real farm
 ```bash
 git clone https://github.com/YuSeungHyun97/fto-sort.git
 pip install gdown
-gdown "https://drive.google.com/uc?id=파일_ID"
+gdown ""
 docker run --gpus '"device=0"' --ipc=host -v <your_path>:/ --rm -it -w /fto-sort tidlsld44/boxmot:1.1 /bin/bash
 ```
 
