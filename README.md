@@ -9,15 +9,11 @@ This is a brief description of my project.
 
 
 <details>
-  <summary>Tracking_detector</summary>
+  <summary>Tracking_simple</summary>
 
-  ## Tracking Details
-
-  Here are the details about the tracking part of the project:
-
-  - **Step 1:** Explanation of step 1
-  - **Step 2:** Explanation of step 2
-  - **Step 3:** Explanation of step 3
+  - **Step 1:** download detection_txt ""
+  - **Step 2:** ```bash python track_txt.py --tracking-model FTOSORT
+  - **Step 3:** ```bash python scripts/run_mot_challenge.py --BENCHMARK jochiwon --SPLIT_TO_EVAL 2M30S
 
   You can provide more detailed information here and even include images, links, or code examples.
 
