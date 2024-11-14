@@ -12,6 +12,9 @@ This is a brief description of my project.
   <summary>Tracking_simple</summary>
 
    ```bash
+  git clone https://github.com/YuSeungHyun97/fto-sort.git
+  pip install gdown
+  gdown "https://drive.google.com/uc?id=파일_ID"
   python track_txt.py --tracking-model FTOSORT
   python scripts/run_mot_challenge.py --BENCHMARK jochiwon --SPLIT_TO_EVAL 2M30S
    ```
