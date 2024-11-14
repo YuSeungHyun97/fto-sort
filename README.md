@@ -4,17 +4,18 @@ The FTO-SORT system leverages the [YOLO](https://github.com/ultralytics/ultralyt
 
 For evaluating tracking accuracy, the [TrackEval GitHub Repository](https://github.com/JonathonLuiten/TrackEval) was utilized.
 
-This is a brief description of my project.
-
-
+## Installation
+```bash
+git clone https://github.com/YuSeungHyun97/fto-sort.git
+pip install gdown
+gdown "https://drive.google.com/uc?id=파일_ID"
+docker run --gpus '"device=0"' --ipc=host -v <your_path>:/ --rm -it -w /fto-sort tidlsld44/boxmot:1.1 /bin/bash
+```
 
 <details>
   <summary>Tracking_simple</summary>
 
-   ```bash
-  git clone https://github.com/YuSeungHyun97/fto-sort.git
-  pip install gdown
-  gdown "https://drive.google.com/uc?id=파일_ID"
+   ```bash  
   python track_txt.py --tracking-model FTOSORT
   python scripts/run_mot_challenge.py --BENCHMARK jochiwon --SPLIT_TO_EVAL 2M30S
    ```
