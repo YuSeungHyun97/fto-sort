@@ -4,6 +4,10 @@ The FTO-SORT system leverages the [YOLO](https://github.com/ultralytics/ultralyt
 
 For evaluating tracking accuracy, the [TrackEval GitHub Repository](https://github.com/JonathonLuiten/TrackEval) was utilized.
 
+## Dataset
+We provide an open dataset recorded over 2 minutes and 30 seconds in a real farm environment with 23 pigs. 
+""
+
 ## Installation
 ```bash
 git clone https://github.com/YuSeungHyun97/fto-sort.git
