@@ -12,8 +12,9 @@ This is a brief description of my project.
   <summary>Tracking_simple</summary>
 
   - **Step 1:** download detection_txt ""
-  - **Step 2:** ```bash
-  - python track_txt.py --tracking-model FTOSORT
+  - **Step 2:**
+  ```bash
+  python track_txt.py --tracking-model FTOSORT
   - **Step 3:** ```bash
   - python scripts/run_mot_challenge.py --BENCHMARK jochiwon --SPLIT_TO_EVAL 2M30S
 
