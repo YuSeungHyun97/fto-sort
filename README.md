@@ -7,7 +7,7 @@ For evaluating tracking accuracy, the [TrackEval GitHub Repository](https://gith
 | Method                                        | HOTA (%) | MOTA (%) | IDF1 (%) | FPS (TX2) |
 |-----------------------------------------------|----------|----------|----------|-----------|
 | BOT-SORT + YOLOv8n-seg                        | 64.1     | 78.4     | 71.3     | 0.6       |
-| BOT-SORT + YOLOv8n-seg (FBDA, OFBL)           | 72.0     | 82.1     | 82.6     | 0.6       |
+| BOT-SORT + YOLOv8n-seg (FBDA, OFBL) + Confidence Thresh (0.25)          | 72.0     | 82.1     | 82.6     | 0.6       |
 | + Confidence Thresh (0.25)                    | 72.7     | 82.3     | 84.6     | 7.2       |
 | + ReID remove                                 | 73.7     | 83.1     | 86.7     | 7.2       |
 | + Track Thresh Modification                   | 75.5     | 83.1     | 90.1     | 6.2       |
