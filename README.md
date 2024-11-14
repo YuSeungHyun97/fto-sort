@@ -20,21 +20,4 @@ docker run --gpus '"device=0"' --ipc=host -v <your_path>:/ --rm -it -w /fto-sort
   python scripts/run_mot_challenge.py --BENCHMARK jochiwon --SPLIT_TO_EVAL 2M30S
    ```
 
-  You can provide more detailed information here and even include images, links, or code examples.
-
-</details>
-
-<details>
-  <summary>Tracking_txt</summary>
-
-  ## Tracking Details
-
-  Here are the details about the tracking part of the project:
-
-  - **Step 1:** Explanation of step 1
-  - **Step 2:** Explanation of step 2
-  - **Step 3:** Explanation of step 3
-
-  You can provide more detailed information here and even include images, links, or code examples.
-
 </details>
