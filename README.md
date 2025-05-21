@@ -20,8 +20,16 @@ For evaluating tracking accuracy, the [TrackEval GitHub Repository](https://gith
 
 
 ## Dataset
-We provide an open dataset recorded over 2 minutes and 30 seconds in a real farm environment with 23 pigs. The dataset includes ground truth annotations for tracking purposes.
-""
+We provide an open dataset recorded over 2 minutes and 30 seconds in a real farm environment with 23 pigs. The dataset includes ground truth annotations for tracking purposes.  
+[Download link](https://drive.google.com/file/d/1juPjNd7YySNVHjEn-bsPKRbq9TWpzmTA/view?usp=sharing)
+
+> If you use this dataset or the associated code, please cite the following paper:  
+>  
+> Yu, S., Baek, H., Son, S., Seo, J., & Chung, Y. (2025).  
+> *FTO-SORT: A fast track-id optimizer for enhanced multi-object tracking with SORT in unseen pig farm environments*.  
+> *Computers and Electronics in Agriculture, 237*, 110540.  
+> https://doi.org/10.1016/j.compag.2025.110540
+
 
 ## Installation
 ```bash
