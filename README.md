@@ -1,3 +1,8 @@
+**FTO-SORT: A Fast Track-id Optimizer for Enhanced Multi-Object Tracking with SORT in Unseen Pig Farm Environments**  
+Yu, S., Baek, H., Son, S., Seo, J., & Chung, Y. (2025).  
+Published in *Computers and Electronics in Agriculture, 237*, 110540.  
+[https://doi.org/10.1016/j.compag.2025.110540](https://doi.org/10.1016/j.compag.2025.110540)
+
 # FTO-SORT
 ![Video Preview](data/output.gif)
 The FTO-SORT system leverages the [YOLO](https://github.com/ultralytics/ultralytics) model as its primary detector for accurate object identification and incorporates a tracking mechanism based on modifications and enhancements of the [BoT-SORT](https://arxiv.org/pdf/2206.14651) and [BoxMOT](https://github.com/mikel-brostrom/boxmot/tree/master?tab=readme-ov-file). By integrating and customizing these existing tracking frameworks, the system achieves improved detection precision and robust object tracking, tailored to the specific requirements of the application.
