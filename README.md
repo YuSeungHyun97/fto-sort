@@ -1,4 +1,26 @@
 **FTO-SORT: A Fast Track-id Optimizer for Enhanced Multi-Object Tracking with SORT in Unseen Pig Farm Environments**  
+**ABSTRACT**  
+As the importance of animal welfare and agricultural automation continues to grow, advancements in real-time
+multi-object tracking technology within pig farm environments have become essential. In commercial farms
+(unseen datasets) differing from the trained dataset, various factors, such as light flares, object overlap, and
+ambiguous boundaries between the foreground and background, pose challenges that reduce detection accuracy.
+Although methods using large models or ensemble detectors exist, they often suffer from slower execution
+speeds. While other studies focus on improving accuracy on seen datasets, this can result in lower accuracy when
+applied to different farm environments. To address this, our study introduces a new data augmentation method
+called FBDA (Foreground-Background Separation and Data Augmentation) using SAM and LaMa to enhance
+performance without affecting execution speed. We also implemented a new weighting technique in the existing
+loss function to handle overlaps or ambiguous boundaries, termed OFBL (Overlap and Foreground-Background
+Difference Loss), which improves detection performance while maintaining YOLO’s speed. To further improve
+tracking performance, we introduced a new module, FTO (Farm Track-id Optimizer), into the BoT-SORT (Bag of
+Tricks for MOT Simple Online and Realtime Tracking) model, resulting in FTO-SORT (Farm Track-id Optimizer
+with SORT). Using our proposed method, we achieved significant improvements in tracking performance on
+unseen datasets, increasing IDF1 from 75.1% to 90.2% with YOLOv8 and from 68.7% to 86.7% with YOLOv11,
+representing gains of 15.1% and 18.0%, respectively. Additionally, by removing the Re-ID module from FTOSORT, the FPS on the TX2 board increased, achieving speeds that were approximately 10.3 times faster (from
+0.6 to 6.2 FPS) and 11.1 times faster (from 0.6 to 6.7 FPS), significantly enhancing processing speed. We shared
+our tracking dataset at https://github.com/YuSeungHyun97/fto-sort for precision livestock farming research
+community.
+
+**Citation**  
 Yu, S., Baek, H., Son, S., Seo, J., & Chung, Y. (2025).  
 Published in *Computers and Electronics in Agriculture, 237*, 110540.  
 [https://doi.org/10.1016/j.compag.2025.110540](https://doi.org/10.1016/j.compag.2025.110540)
