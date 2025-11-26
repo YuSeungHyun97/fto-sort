@@ -51,6 +51,11 @@ For evaluating tracking accuracy, the [TrackEval GitHub Repository](https://gith
 We provide an open dataset recorded over 2 minutes and 30 seconds in a real farm environment with 23 pigs. The dataset includes ground truth annotations for tracking purposes.  
 [Download link](https://drive.google.com/file/d/1juPjNd7YySNVHjEn-bsPKRbq9TWpzmTA/view?usp=sharing)
 
+**✨ NEW! Dataset II (Expanded Release)**
+We are excited to announce the immediate release of our **second open dataset (Dataset II)**!
+This expanded resource contains **2,520 labeled images** recorded over **5 minutes** from 23 pigs in a real farm environment. We believe this additional, longer dataset will be valuable for your tracking and analysis research.
+[Download link](https://drive.google.com/file/d/1Oegl_antkjPuKPScxYPKPX3b9rp-Y0Cb/view?usp=sharing)
+
 > If you use this dataset or the associated code, please cite the following paper:  
 >  
 > Yu, S., Baek, H., Son, S., Seo, J., & Chung, Y. (2025).  
