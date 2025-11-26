@@ -52,7 +52,7 @@ We provide an open dataset recorded over 2 minutes and 30 seconds in a real farm
 [Download link](https://drive.google.com/file/d/1juPjNd7YySNVHjEn-bsPKRbq9TWpzmTA/view?usp=sharing)
 
 **✨ NEW! Dataset II (Expanded Release)**
-We are excited to announce the immediate release of our **second open dataset (Dataset II)**!
+We are excited to announce the immediate release of our second open dataset (Dataset II)!
 This expanded resource contains **2,520 labeled images** recorded over **5 minutes** from 23 pigs in a real farm environment. We believe this additional, longer dataset will be valuable for your tracking and analysis research.
 [Download link](https://drive.google.com/file/d/1Oegl_antkjPuKPScxYPKPX3b9rp-Y0Cb/view?usp=sharing)
 
